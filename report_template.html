@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>STR Optimization Report</title>
+<style>
+  :root{
+    --navy:#1A1A2E; --navy-2:#23233f; --accent:#E94560; --paper:#ffffff;
+    --ink:#1f2430; --muted:#6b7280; --line:#e6e8ef; --soft:#f6f7fb;
+    --A:#1f9d55; --B:#2563eb; --C:#e08600; --D:#d92d20;
+    --crit:#d92d20; --high:#e08600; --med:#1f9d55; --low:#9aa1ad;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:#fff; line-height:1.5;}
+  .doc{width:100%; background:var(--paper);}
+  .pad{padding:0 14mm}
+  section{padding:0 14mm}
+  .sec{padding-top:16px; padding-bottom:16px; border-top:1px solid var(--line)}
+  h2.kicker{font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent);
+    margin:0 0 10px; font-weight:800;}
+  h3{margin:14px 0 6px; font-size:15px; color:var(--navy)}
+  p{margin:0 0 8px}
+  .muted{color:var(--muted)} .small{font-size:12.5px}
+
+  .cover{background:linear-gradient(135deg,var(--navy),var(--navy-2)); color:#fff; padding:20mm 14mm 16mm}
+  .cover .brand{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#aeb2c7}
+  .cover .accent-bar{width:54px; height:5px; background:var(--accent); border-radius:3px; margin:14px 0 18px}
+  .cover h1{font-size:30px; line-height:1.2; margin:0 0 6px}
+  .cover .meta-line{color:#d7dae8; font-size:14px; margin:2px 0}
+  .cover .ratingrow{display:flex; gap:26px; margin-top:22px; flex-wrap:wrap}
+  .cover .rstat .n{font-size:26px; font-weight:800}
+  .cover .rstat .l{font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:#aeb2c7}
+  .platform-tag{display:inline-block; background:var(--accent); color:#fff; font-size:11px;
+    font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:.5px}
+
+  .bullets{display:grid; gap:10px}
+  .bullet{display:grid; grid-template-columns:170px 1fr; gap:14px; padding:11px 14px;
+    background:var(--soft); border-left:4px solid var(--accent); border-radius:6px}
+  .bullet .bl{font-weight:800; color:var(--navy); font-size:12.5px}
+  .headline{font-size:17px; font-weight:700; color:var(--navy); margin:0 0 14px; line-height:1.35}
+
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .card{background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:14px}
+  .card .l{font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted)}
+  .card .v{font-size:20px; font-weight:800; color:var(--navy); margin-top:4px}
+  .card.hot{background:#fff5f6; border-color:#f6cdd4} .card.hot .v{color:var(--accent)}
+  .pos{margin-top:12px; font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:8px; padding:10px 12px}
+
+  .scores{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 22px; margin-top:6px}
+  .scorebar{display:grid; grid-template-columns:120px 1fr 44px; gap:10px; align-items:center; font-size:12.5px}
+  .track{height:8px; background:#eceef5; border-radius:6px; overflow:hidden}
+  .fill{height:100%; background:var(--navy); border-radius:6px}
+
+  table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px}
+  th,td{text-align:left; padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:var(--navy); color:#fff; font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; font-weight:700}
+  tr:nth-child(even) td{background:#fafbfe}
+  td.num,th.num{text-align:right; white-space:nowrap}
+  .wrap{white-space:pre-line}
+
+  .audit-item{display:grid; grid-template-columns:64px 1fr; gap:14px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .pill{display:inline-flex; align-items:center; justify-content:center; width:46px; height:46px;
+    border-radius:10px; color:#fff; font-size:22px; font-weight:800}
+  .pill.A{background:var(--A)} .pill.B{background:var(--B)} .pill.C{background:var(--C)} .pill.D{background:var(--D)}
+  .audit-item .cat{font-weight:800; color:var(--navy); font-size:14px}
+  .audit-item .impact{float:right; color:var(--accent); font-weight:700; font-size:12.5px}
+  .audit-item ul{margin:6px 0 0; padding-left:18px}
+  .audit-item li{margin:2px 0; font-size:12.5px}
+
+  .matrix{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px}
+  .quad{border:1px solid var(--line); border-radius:10px; padding:12px; background:#fff}
+  .quad h4{margin:0 0 6px; font-size:13px}
+  .quad.q1{border-top:4px solid var(--A)} .quad.q2{border-top:4px solid var(--B)}
+  .quad.q3{border-top:4px solid var(--C)} .quad.q4{border-top:4px solid var(--low)}
+  .quad ul{margin:0; padding-left:18px} .quad li{font-size:12px; margin:3px 0}
+  .quad .tag{font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted)}
+
+  .rw{background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:14px; margin:10px 0}
+  .rw .lab{font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--accent); font-weight:800}
+  .rw .txt{font-size:14px; color:var(--navy); font-weight:600; margin:4px 0}
+  .rw .why{font-size:12px; color:var(--muted)}
+  .copybox{background:#fff; border:1px dashed var(--accent); border-radius:8px; padding:12px; font-size:13px; line-height:1.55}
+
+  .prio{display:inline-block; padding:3px 9px; border-radius:5px; color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.5px}
+  .prio.CRITICAL{background:var(--crit)} .prio.HIGH{background:var(--high)} .prio.MEDIUM{background:var(--med)} .prio.LOW{background:var(--low)}
+  tr.r-CRITICAL td{box-shadow:inset 3px 0 var(--crit)}
+  tr.r-HIGH td{box-shadow:inset 3px 0 var(--high)}
+  tr.r-MEDIUM td{box-shadow:inset 3px 0 var(--med)}
+  tr.r-LOW td{box-shadow:inset 3px 0 var(--low)}
+
+  .total{margin:18px 0 4px; background:var(--navy); color:#fff; border-radius:12px; padding:18px 20px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px}
+  .total .l{font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#aeb2c7}
+  .total .v{font-size:26px; font-weight:800; color:var(--accent)}
+  .footer{padding:14px 14mm 18mm; color:var(--muted); font-size:11px}
+
+  @page{size:A4; margin:12mm}
+  @media print{
+    .sec, section{break-inside:avoid}
+    .audit-item, .bullet, tr, .quad, .rw{break-inside:avoid}
+    h2.kicker{break-after:avoid}
+    .cover{break-after:page}
+  }
+</style>
+</head>
+<body>
+<div class="doc" id="doc"></div>
+
+<script>
+/* ===== data injected by launcher ===== */
+const DATA = __LISTING_DATA__;
+
+/* ===== helpers ===== */
+const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const nl  = s => esc(s).replace(/\n/g,'<br>');
+const has = v => v!==undefined && v!==null && v!=='';
+const pct = s => { const n=parseFloat(s); return isNaN(n)?0:Math.max(0,Math.min(100,n/5*100)); };
+const sec = (k,inner)=>`<section class="sec"><h2 class="kicker">${k}</h2>${inner}</section>`;
+
+function cover(m){m=m||{};
+  const stars = has(m.overall_rating)?`★ ${esc(m.overall_rating)}`:'—';
+  return `<div class="cover"><div class="brand">Short-Term Rental · Revenue Audit</div>
+    <div class="accent-bar"></div><h1>${esc(m.listing_title||'Untitled listing')}</h1>
+    <div class="meta-line">${esc(m.listing_type||'')}${m.capacity?' · '+esc(m.capacity):''}</div>
+    <div class="meta-line">${esc(m.location||'')}</div>
+    <div class="meta-line"><span class="platform-tag">${esc(m.platform||'Airbnb')}</span>
+      ${m.host?'&nbsp;&nbsp;Host: '+esc(m.host):''}</div>
+    <div class="ratingrow">
+      <div class="rstat"><div class="n">${stars}</div><div class="l">Overall rating</div></div>
+      <div class="rstat"><div class="n">${has(m.review_count)?esc(m.review_count):'—'}</div><div class="l">Reviews</div></div>
+      <div class="rstat"><div class="n">${esc(m.report_date||'')}</div><div class="l">Report date</div></div>
+    </div></div>`;}
+
+function ownerSummary(o){if(!o)return'';
+  const bl=(o.bullets||[]).map(b=>`<div class="bullet"><div class="bl">${esc(b.label)}</div><div>${nl(b.text)}</div></div>`).join('');
+  return sec('Plain-English Owner Summary',`<div class="headline">${esc(o.headline||'')}</div><div class="bullets">${bl}</div>`);}
+
+function business(bm,rb){if(!bm&&!rb)return'';let cards='';
+  if(bm){const c=(l,v,hot)=>`<div class="card${hot?' hot':''}"><div class="l">${l}</div><div class="v">${esc(v||'—')}</div></div>`;
+    cards=`<div class="cards">${c('Current RevPAR',bm.current_revpar_estimate)}${c('Potential RevPAR',bm.potential_revpar_estimate,true)}
+      ${c('Market ADR',bm.market_adr)}${c('Market occupancy',bm.market_occupancy)}${c('Top-quartile rate',bm.top_quartile_rate)}
+      ${c('Annual revenue gap',bm.annual_revenue_gap,true)}</div>
+      ${has(bm.current_vs_market)?`<div class="pos"><b>Positioning:</b> ${esc(bm.current_vs_market)}</div>`:''}`;}
+  let scores='';
+  if(rb){const order=[['Cleanliness','cleanliness'],['Accuracy','accuracy'],['Check-in','check_in'],['Communication','communication'],['Location','location'],['Value','value']];
+    scores=`<h3>Review sub-scores</h3><div class="scores">`+order.map(([lab,k])=>{const v=rb[k];
+      return `<div class="scorebar"><span>${lab}</span><div class="track"><div class="fill" style="width:${pct(v)}%"></div></div><span class="num">${has(v)?esc(v):'—'}</span></div>`;}).join('')+`</div>`;}
+  return sec('Business Metrics Dashboard',cards+scores);}
+
+function audit(rows){if(!rows||!rows.length)return'';
+  const body=rows.map(r=>`<div class="audit-item"><div><span class="pill ${esc((r.grade||'C').trim())}">${esc((r.grade||'?').trim())}</span></div>
+    <div><div class="cat">${esc(r.name)} ${has(r.impact)?`<span class="impact">${esc(r.impact)}</span>`:''}</div>
+    <div class="small muted">${esc(r.current_state||'')}</div><ul>${(r.issues||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div></div>`).join('');
+  return sec('Full Listing Audit (A–D)',body);}
+
+function dollarLeak(rows){if(!rows||!rows.length)return'';
+  const body=rows.map(r=>`<tr><td class="num">${esc(r.rank)}</td><td>${esc(r.fix)}</td><td>${esc(r.category)}</td>
+    <td class="wrap">${nl(r.lift_per_night)}</td><td>${esc(r.annual_impact)}</td><td>${esc(r.effort)}</td>
+    <td>${esc(r.implementation_cost)}</td><td>${esc(r.payback_period)}</td></tr>`).join('');
+  return sec('Dollar Leak Ranking',`<table><thead><tr><th class="num">#</th><th>Fix</th><th>Category</th><th>Lift / night</th>
+    <th>Annual impact</th><th>Effort</th><th>Cost</th><th>Payback</th></tr></thead><tbody>${body}</tbody></table>`);}
+
+function matrix(m){if(!m)return'';
+  const q=(cls,title,tag,arr)=>`<div class="quad ${cls}"><div class="tag">${tag}</div><h4>${title}</h4>
+    <ul>${(arr||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li class="muted">—</li>'}</ul></div>`;
+  return sec('Effort vs. Impact Matrix',`<div class="matrix">${q('q1','Quick wins','Low effort · High impact',m.quick_wins)}
+    ${q('q2','Strategic investments','High effort · High impact',m.strategic_investments)}
+    ${q('q3','Fill-in tasks','Low effort · Low impact',m.fill_in_tasks)}
+    ${q('q4','Deprioritize','High effort · Low impact',m.deprioritize)}</div>`);}
+
+function pricing(p){if(!p)return'';
+  const body=(p.tiers||[]).map(t=>`<tr><td><b>${esc(t.period)}</b></td><td>${esc(t.dates)}</td><td>${esc(t.signal)}</td>
+    <td>${esc(t.rate)}</td><td class="num">${esc(t.vs_base)}</td></tr>`).join('');
+  return sec('AI Revenue Management',`${has(p.recommendation_text)?`<p>${esc(p.recommendation_text)}</p>`:''}
+    <table><thead><tr><th>Period</th><th>Dates</th><th>Demand signal</th><th>Rate</th><th class="num">vs base</th></tr></thead><tbody>${body}</tbody></table>`);}
+
+function rewrites(r){if(!r)return'';
+  return sec('Title &amp; Description Rewrites',`
+    ${has(r.title_current)?`<h3>Current title</h3><p class="small muted">${esc(r.title_current)}${r.title_problems?' — '+esc(r.title_problems):''}</p>`:''}
+    <div class="rw"><div class="lab">Option A · Search-optimised</div><div class="txt">${esc(r.title_option_a_text)}</div><div class="why">${esc(r.title_option_a_rationale)}</div></div>
+    <div class="rw"><div class="lab">Option B · Lifestyle / emotional</div><div class="txt">${esc(r.title_option_b_text)}</div><div class="why">${esc(r.title_option_b_rationale)}</div></div>
+    ${has(r.description_current_opener)?`<h3>Current opener</h3><p class="small muted">${esc(r.description_current_opener)}${r.description_problems?' — '+esc(r.description_problems):''}</p>`:''}
+    <h3>Rewritten opener — ready to paste</h3><div class="copybox">${nl(r.description_rewrite)}</div>
+    ${has(r.description_changes)?`<p class="small muted" style="margin-top:8px">${esc(r.description_changes)}</p>`:''}
+    ${has(r.house_rules_note)?`<p class="small"><b>Move to house rules:</b> ${esc(r.house_rules_note)}</p>`:''}`);}
+
+function photoPlan(rows){if(!rows||!rows.length)return'';
+  const body=rows.map(r=>`<tr><td><b>${esc(r.shot)}</b></td><td>${esc(r.subject)}</td><td>${esc(r.notes)}</td></tr>`).join('');
+  return sec('Photo Action Plan',`<table><thead><tr><th>Shot</th><th>Subject</th><th>Styling notes</th></tr></thead><tbody>${body}</tbody></table>`);}
+
+function reviewStrategy(rows){if(!rows||!rows.length)return'';
+  const body=rows.map(r=>`<div class="bullet"><div class="bl">${esc(r.label)}</div><div>${nl(r.text)}</div></div>`).join('');
+  return sec('Review Strategy',`<div class="bullets">${body}</div>`);}
+
+function checklist(rows){if(!rows||!rows.length)return'';
+  const order={CRITICAL:0,HIGH:1,MEDIUM:2,LOW:3};
+  const sorted=[...rows].sort((a,b)=>(order[(a.priority||'').toUpperCase()]??9)-(order[(b.priority||'').toUpperCase()]??9));
+  const body=sorted.map(r=>{const p=(r.priority||'').toUpperCase();
+    return `<tr class="r-${p}"><td><span class="prio ${p}">${esc(p)}</span></td><td>${esc(r.action)}</td><td>${esc(r.effort)}</td><td>${esc(r.annual_value)}</td></tr>`;}).join('');
+  return sec('Priority Action Checklist',`<table><thead><tr><th>Priority</th><th>Action</th><th>Effort</th><th>Annual value</th></tr></thead><tbody>${body}</tbody></table>`);}
+
+function totalUpside(t){if(!has(t))return'';
+  return `<div class="pad"><div class="total"><div class="l">Total estimated annual upside</div><div class="v">${esc(t)}</div></div></div>`;}
+
+function render(d){const m=d.meta||{};
+  document.getElementById('doc').innerHTML =
+    cover(m) + `<div style="height:6px"></div>` +
+    ownerSummary(d.owner_summary) + business(d.business_metrics,d.review_breakdown) +
+    audit(d.audit) + dollarLeak(d.dollar_leak) + matrix(d.effort_impact_matrix) +
+    pricing(d.pricing) + rewrites(d.rewrites) + photoPlan(d.photo_plan) +
+    reviewStrategy(d.review_strategy) + checklist(d.checklist) + totalUpside(d.total_upside) +
+    `<div class="footer">Generated by STR Listing Optimizer · ${esc(m.report_date||'')} · Source: ${esc(m.url||'—')}<br>
+      Estimates are conservative and based on stated market data at time of analysis; actuals vary with execution, season, and demand.</div>`;
+  document.title = (m.listing_title||'STR Report');
+}
+render(DATA);
+</script>
+</body>
+</html>

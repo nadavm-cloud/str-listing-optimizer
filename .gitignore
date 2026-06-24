@@ -1,0 +1,17 @@
+# Generated reports and real listing data — never commit
+output/
+listing_data.json
+
+# Claude Code session files — keep settings.json, ignore everything else
+.claude/*/
+.claude/*.md
+.claude/*.log
+
+# OS noise
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Temp files
+*.tmp
+*.log
