@@ -12,6 +12,9 @@ Thumbs.db
 .DS_Store
 desktop.ini
 
+# Node (precaution for future full-stack version)
+node_modules/
+
 # Temp files
 *.tmp
 *.log

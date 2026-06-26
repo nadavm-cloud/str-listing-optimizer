@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STR Listing Optimizer</title>
+<style>
+  :root{
+    --navy:#1A1A2E; --navy-2:#23233f; --accent:#E94560; --paper:#ffffff;
+    --ink:#1f2430; --muted:#6b7280; --line:#e6e8ef; --soft:#f6f7fb;
+    --A:#1f9d55; --B:#2563eb; --C:#e08600; --D:#d92d20;
+    --crit:#d92d20; --high:#e08600; --med:#1f9d55; --low:#9aa1ad;
+    --shadow:0 8px 30px rgba(16,18,40,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:#eef0f6; line-height:1.5;
+  }
+
+  /* ---------- Control panel ---------- */
+  .panel{
+    position:sticky; top:0; z-index:50; background:var(--navy);
+    color:#fff; padding:16px 22px; box-shadow:0 2px 14px rgba(0,0,0,.25);
+  }
+  .panel h1{margin:0 0 2px; font-size:18px; letter-spacing:.3px}
+  .panel h1 b{color:var(--accent)}
+  .panel .sub{font-size:12px; color:#b9bdd0; margin-bottom:12px}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end}
+  .field{display:flex; flex-direction:column; gap:4px}
+  .field label{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:#aeb2c7}
+  .field input, .field select, .field textarea{
+    background:#fff; border:1px solid #2c2c4a; border-radius:8px; padding:9px 11px;
+    font-size:13px; color:var(--ink); font-family:inherit;
+  }
+  .field input{min-width:340px}
+  .grow{flex:1 1 360px}
+  textarea{width:100%; min-height:120px; resize:vertical; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px}
+  .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+  button{
+    border:0; border-radius:8px; padding:10px 16px; font-size:13px; font-weight:700;
+    cursor:pointer; letter-spacing:.2px;
+  }
+  .b-primary{background:var(--accent); color:#fff}
+  .b-ghost{background:transparent; color:#fff; border:1px solid #3a3a5c}
+  .b-light{background:#fff; color:var(--navy)}
+  button:hover{filter:brightness(1.06)}
+  .hint{font-size:11.5px; color:#9aa0bb; margin-top:10px}
+  .err{color:#ffb4bd; font-size:12px; margin-top:8px; white-space:pre-wrap}
+  details summary{cursor:pointer; color:#cfd3e6; font-size:12px; margin-top:10px}
+
+  /* ---------- Report ---------- */
+  .stage{display:flex; justify-content:center; padding:26px 14px 60px}
+  .doc{
+    width:210mm; max-width:100%; background:var(--paper); box-shadow:var(--shadow);
+    border-radius:4px; overflow:hidden;
+  }
+  .pad{padding:20mm 18mm}
+  section{padding:0 18mm}
+  .sec{padding-top:16px; padding-bottom:16px; border-top:1px solid var(--line)}
+  .sec:first-child{border-top:0}
+  h2.kicker{
+    font-size:12px; letter-spacing:1.4px; text-transform:uppercase; color:var(--accent);
+    margin:0 0 10px; font-weight:800;
+  }
+  h3{margin:14px 0 6px; font-size:15px; color:var(--navy)}
+  p{margin:0 0 8px}
+  .muted{color:var(--muted)}
+  .small{font-size:12.5px}
+
+  /* Cover */
+  .cover{background:linear-gradient(135deg,var(--navy),var(--navy-2)); color:#fff; padding:26mm 18mm 18mm}
+  .cover .brand{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#aeb2c7}
+  .cover .accent-bar{width:54px; height:5px; background:var(--accent); border-radius:3px; margin:14px 0 18px}
+  .cover h1{font-size:30px; line-height:1.2; margin:0 0 6px}
+  .cover .meta-line{color:#d7dae8; font-size:14px; margin:2px 0}
+  .cover .ratingrow{display:flex; gap:26px; margin-top:22px; flex-wrap:wrap}
+  .cover .rstat .n{font-size:26px; font-weight:800}
+  .cover .rstat .l{font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:#aeb2c7}
+  .platform-tag{display:inline-block; background:var(--accent); color:#fff; font-size:11px;
+    font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:.5px}
+
+  /* Owner summary bullets */
+  .bullets{display:grid; gap:10px}
+  .bullet{display:grid; grid-template-columns:170px 1fr; gap:14px; padding:11px 14px;
+    background:var(--soft); border-left:4px solid var(--accent); border-radius:6px}
+  .bullet .bl{font-weight:800; color:var(--navy); font-size:12.5px}
+  .headline{font-size:17px; font-weight:700; color:var(--navy); margin:0 0 14px; line-height:1.35}
+
+  /* Metric cards */
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
+  .card{background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:14px}
+  .card .l{font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted)}
+  .card .v{font-size:20px; font-weight:800; color:var(--navy); margin-top:4px}
+  .card.hot{background:#fff5f6; border-color:#f6cdd4}
+  .card.hot .v{color:var(--accent)}
+  .pos{margin-top:12px; font-size:13px; background:#fff; border:1px dashed var(--line); border-radius:8px; padding:10px 12px}
+
+  /* sub-score bars */
+  .scores{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 22px; margin-top:6px}
+  .scorebar{display:grid; grid-template-columns:120px 1fr 44px; gap:10px; align-items:center; font-size:12.5px}
+  .track{height:8px; background:#eceef5; border-radius:6px; overflow:hidden}
+  .fill{height:100%; background:var(--navy); border-radius:6px}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px}
+  th,td{text-align:left; padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:var(--navy); color:#fff; font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; font-weight:700}
+  tr:nth-child(even) td{background:#fafbfe}
+  td.num,th.num{text-align:right; white-space:nowrap}
+  .wrap{white-space:pre-line}
+
+  /* audit + pills */
+  .audit-item{display:grid; grid-template-columns:64px 1fr; gap:14px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .pill{display:inline-flex; align-items:center; justify-content:center; width:46px; height:46px;
+    border-radius:10px; color:#fff; font-size:22px; font-weight:800}
+  .pill.A{background:var(--A)} .pill.B{background:var(--B)} .pill.C{background:var(--C)} .pill.D{background:var(--D)}
+  .audit-item .cat{font-weight:800; color:var(--navy); font-size:14px}
+  .audit-item .impact{float:right; color:var(--accent); font-weight:700; font-size:12.5px}
+  .audit-item ul{margin:6px 0 0; padding-left:18px}
+  .audit-item li{margin:2px 0; font-size:12.5px}
+
+  /* matrix */
+  .matrix{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px}
+  .quad{border:1px solid var(--line); border-radius:10px; padding:12px; background:#fff}
+  .quad h4{margin:0 0 6px; font-size:13px}
+  .quad.q1{border-top:4px solid var(--A)} .quad.q2{border-top:4px solid var(--B)}
+  .quad.q3{border-top:4px solid var(--C)} .quad.q4{border-top:4px solid var(--low)}
+  .quad ul{margin:0; padding-left:18px} .quad li{font-size:12px; margin:3px 0}
+  .quad .tag{font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--muted)}
+
+  /* rewrites */
+  .rw{background:var(--soft); border:1px solid var(--line); border-radius:10px; padding:14px; margin:10px 0}
+  .rw .lab{font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--accent); font-weight:800}
+  .rw .txt{font-size:14px; color:var(--navy); font-weight:600; margin:4px 0}
+  .rw .why{font-size:12px; color:var(--muted)}
+  .copybox{background:#fff; border:1px dashed var(--accent); border-radius:8px; padding:12px; font-size:13px; line-height:1.55}
+
+  /* checklist priority */
+  .prio{display:inline-block; padding:3px 9px; border-radius:5px; color:#fff; font-size:10.5px; font-weight:800; letter-spacing:.5px}
+  .prio.CRITICAL{background:var(--crit)} .prio.HIGH{background:var(--high)} .prio.MEDIUM{background:var(--med)} .prio.LOW{background:var(--low)}
+  tr.r-CRITICAL td{box-shadow:inset 3px 0 var(--crit)}
+  tr.r-HIGH td{box-shadow:inset 3px 0 var(--high)}
+  tr.r-MEDIUM td{box-shadow:inset 3px 0 var(--med)}
+  tr.r-LOW td{box-shadow:inset 3px 0 var(--low)}
+
+  .total{margin:18px 0 4px; background:var(--navy); color:#fff; border-radius:12px; padding:18px 20px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px}
+  .total .l{font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#aeb2c7}
+  .total .v{font-size:26px; font-weight:800; color:var(--accent)}
+
+  .footer{padding:14px 18mm 22mm; color:var(--muted); font-size:11px}
+
+  /* print */
+  @page{size:A4; margin:14mm}
+  @media print{
+    body{background:#fff}
+    .panel{display:none !important}
+    .stage{padding:0}
+    .doc{box-shadow:none; width:auto; border-radius:0}
+    .cover{padding:18mm 14mm}
+    .sec, section{break-inside:avoid}
+    .audit-item, .bullet, tr, .quad, .rw{break-inside:avoid}
+    h2.kicker{break-after:avoid}
+  }
+  .empty{padding:40px 18mm; color:var(--muted); text-align:center}
+</style>
+</head>
+<body>
+
+<div class="panel" id="panel">
+  <h1>STR <b>Listing Optimizer</b></h1>
+  <div class="sub">Drop in your analysis JSON, render the full report, save as PDF — no account needed.</div>
+
+  <div class="row">
+    <div class="field grow">
+      <label>Listing URL <span style="opacity:.6;font-size:10px;font-weight:400">(reference only — stored in report metadata)</span></label>
+      <input id="urlInput" type="url" placeholder="https://www.airbnb.com/rooms/12345678  or  Booking.com property URL">
+    </div>
+    <div class="field">
+      <label>Platform</label>
+      <select id="platformInput">
+        <option>Airbnb</option>
+        <option>Booking.com</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field" style="margin-top:12px">
+    <label>Analysis data (listing_data.json)</label>
+    <textarea id="jsonInput" placeholder="Paste the listing_data.json produced from the chat analysis here…"></textarea>
+  </div>
+
+  <div class="btns">
+    <button class="b-primary" onclick="renderFromInputs()">▶ Render report</button>
+    <button class="b-light" onclick="window.print()">⬇ Save as PDF</button>
+    <button class="b-ghost" onclick="loadSample()">Load sample</button>
+    <button class="b-ghost" onclick="document.getElementById('fileInput').click()">Open .json file…</button>
+    <input id="fileInput" type="file" accept=".json,application/json" style="display:none" onchange="loadFile(event)">
+  </div>
+
+  <div class=”hint”><b>How to use:</b> Run <code>run_report.cmd</code> locally (Windows) → it analyses the listing and writes <code>listing_data.json</code> to the <code>output/</code> folder → paste that JSON above and click <b>Render report</b> → click <b>Save as PDF</b> (print dialog → “Save as PDF”, margins “Default”).</div>
+  <div class="err" id="errBox"></div>
+</div>
+
+<div class="stage">
+  <div class="doc" id="doc">
+    <div class="empty" id="emptyState">
+      No report yet. Paste <b>listing_data.json</b> above and click <b>Render report</b> — or click <b>Load sample</b> to preview the layout.
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const nl  = s => esc(s).replace(/\n/g,'<br>');
+const has = v => v!==undefined && v!==null && v!=='';
+function pct(score){ // 0-5 -> width%
+  const n = parseFloat(score); if(isNaN(n)) return 0; return Math.max(0,Math.min(100, n/5*100));
+}
+
+/* ---------- section renderers ---------- */
+function cover(m, rb){
+  const meta = m||{};
+  const stars = has(meta.overall_rating)?`★ ${esc(meta.overall_rating)}`:'—';
+  return `<div class="cover">
+    <div class="brand">Short-Term Rental · Revenue Audit</div>
+    <div class="accent-bar"></div>
+    <h1>${esc(meta.listing_title||'Untitled listing')}</h1>
+    <div class="meta-line">${esc(meta.listing_type||'')}${meta.capacity?' · '+esc(meta.capacity):''}</div>
+    <div class="meta-line">${esc(meta.location||'')}</div>
+    <div class="meta-line"><span class="platform-tag">${esc(meta.platform||'Airbnb')}</span>
+      ${meta.host?'&nbsp;&nbsp;Host: '+esc(meta.host):''}</div>
+    <div class="ratingrow">
+      <div class="rstat"><div class="n">${stars}</div><div class="l">Overall rating</div></div>
+      <div class="rstat"><div class="n">${has(meta.review_count)?esc(meta.review_count):'—'}</div><div class="l">Reviews</div></div>
+      <div class="rstat"><div class="n">${esc(meta.report_date||'')}</div><div class="l">Report date</div></div>
+    </div>
+  </div>`;
+}
+
+function ownerSummary(o){
+  if(!o) return '';
+  const bl=(o.bullets||[]).map(b=>`<div class="bullet"><div class="bl">${esc(b.label)}</div><div>${nl(b.text)}</div></div>`).join('');
+  return sec('Plain-English Owner Summary',
+    `<div class="headline">${esc(o.headline||'')}</div><div class="bullets">${bl}</div>`);
+}
+
+function business(bm, rb){
+  if(!bm && !rb) return '';
+  let cards='';
+  if(bm){
+    const c=(l,v,hot)=>`<div class="card${hot?' hot':''}"><div class="l">${l}</div><div class="v">${esc(v||'—')}</div></div>`;
+    cards=`<div class="cards">
+      ${c('Current RevPAR',bm.current_revpar_estimate)}
+      ${c('Potential RevPAR',bm.potential_revpar_estimate,true)}
+      ${c('Market ADR',bm.market_adr)}
+      ${c('Market occupancy',bm.market_occupancy)}
+      ${c('Top-quartile rate',bm.top_quartile_rate)}
+      ${c('Annual revenue gap',bm.annual_revenue_gap,true)}
+    </div>
+    ${has(bm.current_vs_market)?`<div class="pos"><b>Positioning:</b> ${esc(bm.current_vs_market)}</div>`:''}`;
+  }
+  let scores='';
+  if(rb){
+    const order=[['Cleanliness','cleanliness'],['Accuracy','accuracy'],['Check-in','check_in'],
+      ['Communication','communication'],['Location','location'],['Value','value']];
+    scores=`<h3>Review sub-scores</h3><div class="scores">`+
+      order.map(([lab,k])=>{const v=rb[k]; return `<div class="scorebar"><span>${lab}</span>
+        <div class="track"><div class="fill" style="width:${pct(v)}%"></div></div>
+        <span class="num">${has(v)?esc(v):'—'}</span></div>`;}).join('')+`</div>`;
+  }
+  return sec('Business Metrics Dashboard', cards+scores);
+}
+
+function audit(rows){
+  if(!rows||!rows.length) return '';
+  const body=rows.map(r=>`
+    <div class="audit-item">
+      <div><span class="pill ${esc((r.grade||'C').trim())}">${esc((r.grade||'?').trim())}</span></div>
+      <div>
+        <div class="cat">${esc(r.name)} ${has(r.impact)?`<span class="impact">${esc(r.impact)}</span>`:''}</div>
+        <div class="small muted">${esc(r.current_state||'')}</div>
+        <ul>${(r.issues||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+      </div>
+    </div>`).join('');
+  return sec('Full Listing Audit (A–D)', body);
+}
+
+function dollarLeak(rows){
+  if(!rows||!rows.length) return '';
+  const body=rows.map(r=>`<tr>
+    <td class="num">${esc(r.rank)}</td>
+    <td>${esc(r.fix)}</td>
+    <td>${esc(r.category)}</td>
+    <td class="wrap">${nl(r.lift_per_night)}</td>
+    <td>${esc(r.annual_impact)}</td>
+    <td>${esc(r.effort)}</td>
+    <td>${esc(r.implementation_cost)}</td>
+    <td>${esc(r.payback_period)}</td>
+  </tr>`).join('');
+  return sec('Dollar Leak Ranking',
+    `<table><thead><tr>
+      <th class="num">#</th><th>Fix</th><th>Category</th><th>Lift / night</th>
+      <th>Annual impact</th><th>Effort</th><th>Cost</th><th>Payback</th>
+    </tr></thead><tbody>${body}</tbody></table>`);
+}
+
+function matrix(m){
+  if(!m) return '';
+  const q=(cls,title,tag,arr)=>`<div class="quad ${cls}"><div class="tag">${tag}</div><h4>${title}</h4>
+    <ul>${(arr||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li class="muted">—</li>'}</ul></div>`;
+  return sec('Effort vs. Impact Matrix',
+    `<div class="matrix">
+      ${q('q1','Quick wins','Low effort · High impact',m.quick_wins)}
+      ${q('q2','Strategic investments','High effort · High impact',m.strategic_investments)}
+      ${q('q3','Fill-in tasks','Low effort · Low impact',m.fill_in_tasks)}
+      ${q('q4','Deprioritize','High effort · Low impact',m.deprioritize)}
+    </div>`);
+}
+
+function pricing(p){
+  if(!p) return '';
+  const body=(p.tiers||[]).map(t=>`<tr>
+    <td><b>${esc(t.period)}</b></td><td>${esc(t.dates)}</td><td>${esc(t.signal)}</td>
+    <td>${esc(t.rate)}</td><td class="num">${esc(t.vs_base)}</td>
+  </tr>`).join('');
+  return sec('AI Revenue Management',
+    `${has(p.recommendation_text)?`<p>${esc(p.recommendation_text)}</p>`:''}
+     <table><thead><tr><th>Period</th><th>Dates</th><th>Demand signal</th><th>Rate</th><th class="num">vs base</th></tr></thead>
+     <tbody>${body}</tbody></table>`);
+}
+
+function rewrites(r){
+  if(!r) return '';
+  return sec('Title &amp; Description Rewrites', `
+    ${has(r.title_current)?`<h3>Current title</h3><p class="small muted">${esc(r.title_current)}${r.title_problems?' — '+esc(r.title_problems):''}</p>`:''}
+    <div class="rw"><div class="lab">Option A · Search-optimised</div>
+      <div class="txt">${esc(r.title_option_a_text)}</div><div class="why">${esc(r.title_option_a_rationale)}</div></div>
+    <div class="rw"><div class="lab">Option B · Lifestyle / emotional</div>
+      <div class="txt">${esc(r.title_option_b_text)}</div><div class="why">${esc(r.title_option_b_rationale)}</div></div>
+    ${has(r.description_current_opener)?`<h3>Current opener</h3><p class="small muted">${esc(r.description_current_opener)}${r.description_problems?' — '+esc(r.description_problems):''}</p>`:''}
+    <h3>Rewritten opener — ready to paste</h3>
+    <div class="copybox">${nl(r.description_rewrite)}</div>
+    ${has(r.description_changes)?`<p class="small muted" style="margin-top:8px">${esc(r.description_changes)}</p>`:''}
+    ${has(r.house_rules_note)?`<p class="small"><b>Move to house rules:</b> ${esc(r.house_rules_note)}</p>`:''}
+  `);
+}
+
+function photoPlan(rows){
+  if(!rows||!rows.length) return '';
+  const body=rows.map(r=>`<tr><td><b>${esc(r.shot)}</b></td><td>${esc(r.subject)}</td><td>${esc(r.notes)}</td></tr>`).join('');
+  return sec('Photo Action Plan',
+    `<table><thead><tr><th>Shot</th><th>Subject</th><th>Styling notes</th></tr></thead><tbody>${body}</tbody></table>`);
+}
+
+function reviewStrategy(rows){
+  if(!rows||!rows.length) return '';
+  const body=rows.map(r=>`<div class="bullet"><div class="bl">${esc(r.label)}</div><div>${nl(r.text)}</div></div>`).join('');
+  return sec('Review Strategy', `<div class="bullets">${body}</div>`);
+}
+
+function checklist(rows){
+  if(!rows||!rows.length) return '';
+  const order={CRITICAL:0,HIGH:1,MEDIUM:2,LOW:3};
+  const sorted=[...rows].sort((a,b)=>(order[(a.priority||'').toUpperCase()]??9)-(order[(b.priority||'').toUpperCase()]??9));
+  const body=sorted.map(r=>{const p=(r.priority||'').toUpperCase();
+    return `<tr class="r-${p}"><td><span class="prio ${p}">${esc(p)}</span></td>
+      <td>${esc(r.action)}</td><td>${esc(r.effort)}</td><td>${esc(r.annual_value)}</td></tr>`;}).join('');
+  return sec('Priority Action Checklist',
+    `<table><thead><tr><th>Priority</th><th>Action</th><th>Effort</th><th>Annual value</th></tr></thead><tbody>${body}</tbody></table>`);
+}
+
+function totalUpside(t){
+  if(!has(t)) return '';
+  return `<div class="pad" style="padding-top:0"><div class="total"><div class="l">Total estimated annual upside</div><div class="v">${esc(t)}</div></div></div>`;
+}
+
+function sec(kicker, inner){
+  return `<section class="sec"><h2 class="kicker">${kicker}</h2>${inner}</section>`;
+}
+
+/* ---------- assemble ---------- */
+function renderReport(d){
+  const m=d.meta||{};
+  const html =
+    cover(m, d.review_breakdown) +
+    `<div style="height:6px"></div>` +
+    ownerSummary(d.owner_summary) +
+    business(d.business_metrics, d.review_breakdown) +
+    audit(d.audit) +
+    dollarLeak(d.dollar_leak) +
+    matrix(d.effort_impact_matrix) +
+    pricing(d.pricing) +
+    rewrites(d.rewrites) +
+    photoPlan(d.photo_plan) +
+    reviewStrategy(d.review_strategy) +
+    checklist(d.checklist) +
+    totalUpside(d.total_upside) +
+    `<div class="footer">Generated by STR Listing Optimizer · ${esc(m.report_date||'')} · Source: ${esc(m.url||'—')}<br>
+       Estimates are conservative and based on stated market data at time of analysis; actuals vary with execution, season, and demand.</div>`;
+  $('doc').innerHTML = html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function readData(){
+  const raw=$('jsonInput').value.trim();
+  if(!raw) throw new Error('Paste listing_data.json into the box first (or click “Load sample”).');
+  let d;
+  try{ d=JSON.parse(raw); }catch(e){ throw new Error('JSON parse error: '+e.message); }
+  // overlay URL/platform from the inputs if provided
+  d.meta = d.meta||{};
+  if($('urlInput').value.trim()) d.meta.url = $('urlInput').value.trim();
+  if($('platformInput').value) d.meta.platform = d.meta.platform || $('platformInput').value;
+  return d;
+}
+
+function renderFromInputs(){
+  $('errBox').textContent='';
+  try{ renderReport(readData()); }
+  catch(e){ $('errBox').textContent=e.message; }
+}
+
+function loadFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ $('jsonInput').value=r.result; renderFromInputs(); };
+  r.readAsText(f);
+}
+
+/* ---------- sample ---------- */
+function loadSample(){
+  $('urlInput').value='https://www.airbnb.com/rooms/00000000';
+  $('jsonInput').value=JSON.stringify(SAMPLE,null,2);
+  renderFromInputs();
+}
+
+const SAMPLE = {
+  meta:{listing_title:"Sunny 2BR with Balcony — 5 min to Sagrada Família",platform:"Airbnb",
+    url:"https://www.airbnb.com/rooms/00000000",location:"Eixample, Barcelona, Spain",
+    listing_type:"Entire rental unit",capacity:"4 guests · 2 bedrooms · 3 beds · 1 bath",
+    overall_rating:4.72,review_count:128,host:"Marta (Superhost · 6 yrs)",report_date:"June 2026"},
+  review_breakdown:{cleanliness:4.8,accuracy:4.7,check_in:4.9,communication:4.9,location:4.8,value:4.4},
+  business_metrics:{current_revpar_estimate:"€96/night (est.)",potential_revpar_estimate:"€132/night",
+    annual_revenue_gap:"€13,100/year",market_adr:"€158/night",market_occupancy:"71%",
+    top_quartile_rate:"€205/night",current_vs_market:"~14% below neighbourhood median — value sub-score is dragging rate."},
+  owner_summary:{headline:"Solid Superhost listing leaving ~€13k/year on the table, mostly from flat pricing and a weak title.",
+    bullets:[
+      {label:"Biggest quick win",text:"Rewrite the title with capacity + landmark keywords (~€2,400/yr, free)."},
+      {label:"Biggest revenue unlock",text:"Adopt dynamic + event pricing (~€7,800/yr)."},
+      {label:"Biggest risk",text:"No CO alarm listed — suppresses search ranking and is a safety/compliance gap."},
+      {label:"Best ROI fix",text:"Professional photos: €250 cost, ~€3,300/yr → pays back in ~4 weeks."},
+      {label:"Total annual revenue gap",text:"€11,000–€15,500/year"}]},
+  audit:[
+    {name:"TITLE",grade:"C",current_state:"Generic, no capacity or landmark hook.",issues:["No guest count","Landmark buried","Wastes the ~50-char search window","No emotional hook"],impact:"€5–9/night"},
+    {name:"DESCRIPTION",grade:"C",current_state:"Opens with house rules, not benefits.",issues:["Legal text up top","No neighbourhood storytelling","Few amenity mentions","No social proof"],impact:"€3–6/night"},
+    {name:"PHOTOS",grade:"D",current_state:"18 amateur photos, dim cover shot.",issues:["Cover is a dark bedroom","No twilight/exterior","Missing bathroom + kitchen detail","No lifestyle shots"],impact:"€6–10/night"},
+    {name:"PRICING",grade:"D",current_state:"Flat rate year-round, no event uplift.",issues:["No weekend premium","No event surge","Value score 4.4 signals over/underpricing mismatch","No last-minute strategy"],impact:"€15–30/night"},
+    {name:"AMENITIES",grade:"B",current_state:"Good core set, one safety gap.",issues:["No CO alarm listed","No coffee machine","Parking not specified","No workspace tag"],impact:"€2–4/night"},
+    {name:"REVIEWS",grade:"B",current_state:"4.72 with steady velocity.",issues:["Value weakest at 4.4","0.08 short of 4.8 Guest Favourite","~3% 1-star unresponded","No review-request cadence"],impact:"€2–5/night"}],
+  dollar_leak:[
+    {rank:1,fix:"Dynamic + event pricing engine",category:"Pricing",lift_per_night:"€18–30\n(peak/event nights)",annual_impact:"€6,500–9,000",effort:"Med",implementation_cost:"~$30/mo",payback_period:"pays back in ~1 month"},
+    {rank:2,fix:"Professional photography + new cover",category:"Photos",lift_per_night:"€6–10\n(all nights)",annual_impact:"€2,800–3,800",effort:"Med",implementation_cost:"€250",payback_period:"pays back in ~4 weeks"},
+    {rank:3,fix:"Title rewrite (keywords + capacity)",category:"Title",lift_per_night:"€5–9\n(all nights)",annual_impact:"€1,900–3,000",effort:"Low",implementation_cost:"Free",payback_period:"immediate"},
+    {rank:4,fix:"Weekend premium (+15%)",category:"Pricing",lift_per_night:"€12–18\n(~90 weekend nights)",annual_impact:"€1,100–1,600",effort:"Low",implementation_cost:"Free",payback_period:"immediate"},
+    {rank:5,fix:"Description rewrite (benefits-first)",category:"Description",lift_per_night:"€3–6\n(all nights)",annual_impact:"€1,100–2,000",effort:"Low",implementation_cost:"Free",payback_period:"immediate"},
+    {rank:6,fix:"Add CO alarm + list it",category:"Amenities",lift_per_night:"€2–4\n(ranking lift, all nights)",annual_impact:"€700–1,300",effort:"Low",implementation_cost:"€25",payback_period:"pays back in ~2 weeks"},
+    {rank:7,fix:"Last-minute discount rules",category:"Pricing",lift_per_night:"€60–90\n(15–20 unfilled nights)",annual_impact:"€900–1,600",effort:"Low",implementation_cost:"Free",payback_period:"immediate"},
+    {rank:8,fix:"Push value sub-score to 4.8 (close Guest Favourite gap)",category:"Reviews",lift_per_night:"€2–5\n(all nights)",annual_impact:"€700–1,700",effort:"Med",implementation_cost:"Free",payback_period:"immediate"}],
+  effort_impact_matrix:{
+    quick_wins:["Title rewrite","Weekend premium","Description rewrite","Last-minute discount rules"],
+    strategic_investments:["Dynamic + event pricing","Professional photography"],
+    fill_in_tasks:["Add CO alarm","Add coffee machine","Tag dedicated workspace"],
+    deprioritize:["Full re-furnish","Balcony renovation"]},
+  pricing:{recommendation_text:"Base rate is ~14% under market and never moves. Set a €120 base, layer weekend and event premiums, and discount the long tail.",
+    tiers:[
+      {period:"Base (shoulder)",dates:"Oct–Mar weekdays",signal:"Soft demand",rate:"€110–120",vs_base:"—"},
+      {period:"Summer base",dates:"Jun–Sep",signal:"High demand",rate:"€150–175",vs_base:"+40%"},
+      {period:"Mobile World Congress",dates:"2 Mar–5 Mar 2027",signal:"Extreme · 100k+ attendees",rate:"€280–340",vs_base:"+170%"},
+      {period:"Primavera Sound",dates:"3 Jun–7 Jun 2026",signal:"Very high · sold-out festival",rate:"€230–280",vs_base:"+120%"},
+      {period:"La Mercè festival",dates:"19 Sep–24 Sep 2026",signal:"High · city-wide events",rate:"€180–210",vs_base:"+65%"}]},
+  rewrites:{title_current:"Nice apartment in Barcelona",title_problems:"No capacity, no landmark, no hook.",
+    title_option_a_text:"Sunny 2BR · Balcony · 5 min to Sagrada Família · Sleeps 4",
+    title_option_a_rationale:"Leads with capacity + top landmark keyword; projected +€5–9/night.",
+    title_option_b_text:"Light-Filled Eixange Retreat with Balcony — Walk to Gaudí",
+    title_option_b_rationale:"Emotional/lifestyle angle; best for repositioning toward couples.",
+    description_current_opener:"No parties. Check-in after 3pm. No smoking.",
+    description_problems:"Opens with rules instead of selling the stay.",
+    description_rewrite:"Wake up to Barcelona sun streaming across your private balcony, coffee in hand, just a five-minute stroll from the Sagrada Família. This bright, recently refreshed two-bedroom sleeps four in comfort, with a fully equipped kitchen, fast Wi-Fi, and a calm Eixample street that puts tapas bars, Metro, and Gaudí's masterpieces at your doorstep. Families love the flexible bedding and quiet nights; couples love the light and the location. Self check-in makes late arrivals easy, and your Superhost is a quick message away throughout your stay. Whether you're here for a long weekend or a slow week, this is the easy, central base that makes Barcelona feel like home.",
+    description_changes:"Benefits-first opener, sensory hook, capacity + amenities + social proof; rules moved down. Projected +€3–6/night.",
+    house_rules_note:"Move 'no parties / no smoking / check-in after 3pm' into the House Rules field."},
+  photo_plan:[
+    {shot:"Cover (P1)",subject:"Bright living room toward balcony",notes:"Shoot mid-morning, lights on, curtains open, wide angle."},
+    {shot:"P2",subject:"Balcony with coffee styling",notes:"Add cups + plant; sense of lifestyle."},
+    {shot:"P3",subject:"Primary bedroom",notes:"Made bed, symmetrical, soft lamp light."},
+    {shot:"P4",subject:"Second bedroom",notes:"Show flexible bedding clearly."},
+    {shot:"P5",subject:"Kitchen wide",notes:"Clear counters, show appliances + coffee setup."},
+    {shot:"P6",subject:"Kitchen detail",notes:"Coffee machine / cookware close-up."},
+    {shot:"P7",subject:"Bathroom",notes:"Fresh towels, bright, declutter."},
+    {shot:"P8",subject:"Dining area",notes:"Set table for four."},
+    {shot:"P9",subject:"Building exterior / entrance",notes:"Daytime, show the classic Eixample façade."},
+    {shot:"P10",subject:"Sagrada Família 5-min walk",notes:"Establish location credibility."},
+    {shot:"P11",subject:"Neighbourhood café / street",notes:"Lifestyle context."},
+    {shot:"P12",subject:"Twilight balcony or living room",notes:"Warm evening ambience; high engagement shot."}],
+  review_strategy:[
+    {label:"Current score",text:"4.72 (128 reviews)"},
+    {label:"Target score",text:"4.8+ → unlocks Guest Favourite badge + ranking boost"},
+    {label:"Gap to close",text:"+0.08 — ~15–25 strong stays; ~3–4 months at current velocity"},
+    {label:"Weakest sub-score",text:"Value 4.4 — fix by aligning price to perceived quality + small welcome touches"},
+    {label:"1-star reviews",text:"~3% — respond publicly, professional + corrective tone"},
+    {label:"Review request timing",text:"Message at checkout morning; nudge again day 2 post-stay"}],
+  checklist:[
+    {priority:"CRITICAL",action:"Install + list CO alarm",effort:"Low (1hr)",annual_value:"€700–1,300"},
+    {priority:"CRITICAL",action:"Turn on dynamic + event pricing",effort:"Med (3hr setup)",annual_value:"€6,500–9,000"},
+    {priority:"HIGH",action:"Book professional photographer",effort:"Med (1 shoot)",annual_value:"€2,800–3,800"},
+    {priority:"HIGH",action:"Publish new title (Option A)",effort:"Low (15min)",annual_value:"€1,900–3,000"},
+    {priority:"MEDIUM",action:"Paste rewritten description; move rules",effort:"Low (30min)",annual_value:"€1,100–2,000"},
+    {priority:"MEDIUM",action:"Set weekend +15% premium",effort:"Low (20min)",annual_value:"€1,100–1,600"},
+    {priority:"LOW",action:"Add coffee machine + workspace tag",effort:"Low (1hr)",annual_value:"€300–600"}],
+  total_upside:"€11,000–€15,500 / year"
+};
+</script>
+</body>
+</html>
