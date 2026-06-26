@@ -169,39 +169,46 @@
 </head>
 <body>
 
-<div class="panel" id="panel">
+<div class=”panel” id=”panel”>
   <h1>STR <b>Listing Optimizer</b></h1>
-  <div class="sub">Drop in your analysis JSON, render the full report, save as PDF — no account needed.</div>
+  <div class=”sub” style=”margin-bottom:14px”>
+    <span style=”opacity:.75”>Step 1</span> Run <code style=”background:#2a2a4a;padding:1px 5px;border-radius:4px”>run_report.cmd</code> on your PC (AI analysis, ~3 min) &nbsp;→&nbsp;
+    <span style=”opacity:.75”>Step 2</span> Load the output file below &nbsp;→&nbsp;
+    <span style=”opacity:.75”>Step 3</span> Save as PDF
+  </div>
 
-  <div class="row">
-    <div class="field grow">
-      <label>Listing URL <span style="opacity:.6;font-size:10px;font-weight:400">(reference only — stored in report metadata)</span></label>
-      <input id="urlInput" type="url" placeholder="https://www.airbnb.com/rooms/12345678  or  Booking.com property URL">
+  <div class=”btns” style=”margin-top:0;margin-bottom:12px”>
+    <button class=”b-light” style=”font-size:14px;padding:12px 20px” onclick=”document.getElementById('fileInput').click()”>📂 Load analysis file &nbsp;<span style=”opacity:.65;font-size:12px;font-weight:400”>output\listing_data.json</span></button>
+    <input id=”fileInput” type=”file” accept=”.json,application/json” style=”display:none” onchange=”loadFile(event)”>
+    <button class=”b-primary” onclick=”renderFromInputs()”>▶ Render report</button>
+    <button class=”b-ghost” onclick=”window.print()”>⬇ Save as PDF</button>
+    <button class=”b-ghost” onclick=”loadSample()”>Load sample</button>
+  </div>
+
+  <details>
+    <summary>Advanced — set listing URL / paste JSON manually</summary>
+    <div style=”margin-top:12px”>
+      <div class=”row”>
+        <div class=”field grow”>
+          <label>Listing URL <span style=”opacity:.6;font-size:10px;font-weight:400”>(reference only — stored in report metadata)</span></label>
+          <input id=”urlInput” type=”url” placeholder=”https://www.airbnb.com/rooms/12345678  or  Booking.com property URL”>
+        </div>
+        <div class=”field”>
+          <label>Platform</label>
+          <select id=”platformInput”>
+            <option>Airbnb</option>
+            <option>Booking.com</option>
+          </select>
+        </div>
+      </div>
+      <div class=”field” style=”margin-top:12px”>
+        <label>Paste listing_data.json</label>
+        <textarea id=”jsonInput” placeholder=”Paste the JSON produced by run_report.cmd here…”></textarea>
+      </div>
     </div>
-    <div class="field">
-      <label>Platform</label>
-      <select id="platformInput">
-        <option>Airbnb</option>
-        <option>Booking.com</option>
-      </select>
-    </div>
-  </div>
+  </details>
 
-  <div class="field" style="margin-top:12px">
-    <label>Analysis data (listing_data.json)</label>
-    <textarea id="jsonInput" placeholder="Paste the listing_data.json produced from the chat analysis here…"></textarea>
-  </div>
-
-  <div class="btns">
-    <button class="b-primary" onclick="renderFromInputs()">▶ Render report</button>
-    <button class="b-light" onclick="window.print()">⬇ Save as PDF</button>
-    <button class="b-ghost" onclick="loadSample()">Load sample</button>
-    <button class="b-ghost" onclick="document.getElementById('fileInput').click()">Open .json file…</button>
-    <input id="fileInput" type="file" accept=".json,application/json" style="display:none" onchange="loadFile(event)">
-  </div>
-
-  <div class=”hint”><b>How to use:</b> Run <code>run_report.cmd</code> locally (Windows) → it analyses the listing and writes <code>listing_data.json</code> to the <code>output/</code> folder → paste that JSON above and click <b>Render report</b> → click <b>Save as PDF</b> (print dialog → “Save as PDF”, margins “Default”).</div>
-  <div class="err" id="errBox"></div>
+  <div class=”err” id=”errBox”></div>
 </div>
 
 <div class="stage">
