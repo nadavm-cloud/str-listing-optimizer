@@ -152,6 +152,37 @@
 
   .footer{padding:14px 18mm 22mm; color:var(--muted); font-size:11px}
 
+  /* dept dividers */
+  .dept-header{
+    display:flex; align-items:center; gap:14px;
+    background:var(--navy); color:#fff; padding:14px 18mm;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .dept-icon{font-size:22px; line-height:1; flex-shrink:0}
+  .dept-name{font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:#fff}
+  .dept-sub{font-size:11px; color:#aeb2c7; margin-top:2px}
+
+  /* step flow */
+  .step-flow{display:flex; align-items:flex-start; gap:0; margin-bottom:14px; flex-wrap:wrap}
+  .step{display:flex; align-items:flex-start; gap:9px; flex:1; min-width:130px}
+  .step-num{width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff;
+    font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px}
+  .step-text{font-size:11.5px; color:#c5c9e0; line-height:1.35}
+  .step-text b{color:#fff; display:block; margin-bottom:1px}
+  .step-arrow{color:#3a3a5c; font-size:16px; padding:2px 6px; flex-shrink:0; align-self:center}
+
+  /* loaded badge */
+  .loaded-ok{font-size:12px; color:#4ade80; margin-top:6px; display:none}
+
+  /* empty state */
+  .empty{padding:70px 18mm 80px; color:var(--muted); text-align:center}
+  .empty-icon{font-size:52px; margin-bottom:18px; display:block}
+  .empty h2{color:var(--navy); font-size:20px; margin:0 0 8px; font-weight:800}
+  .empty p{margin:0 0 22px; font-size:14px; color:var(--muted)}
+  .empty .e-btn{font-size:14px; padding:13px 24px; border-radius:10px}
+  .empty .e-hint{margin-top:14px; font-size:12.5px; color:var(--muted)}
+  .empty .e-hint a{color:var(--accent); text-decoration:none}
+
   /* print */
   @page{size:A4; margin:14mm}
   @media print{
@@ -163,58 +194,72 @@
     .sec, section{break-inside:avoid}
     .audit-item, .bullet, tr, .quad, .rw{break-inside:avoid}
     h2.kicker{break-after:avoid}
+    .dept-header{break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   }
-  .empty{padding:40px 18mm; color:var(--muted); text-align:center}
 </style>
 </head>
 <body>
 
 <div class=”panel” id=”panel”>
-  <h1>STR <b>Listing Optimizer</b></h1>
-  <div class=”sub” style=”margin-bottom:14px”>
-    <span style=”opacity:.75”>Step 1</span> Run <code style=”background:#2a2a4a;padding:1px 5px;border-radius:4px”>run_report.cmd</code> on your PC (AI analysis, ~3 min) &nbsp;→&nbsp;
-    <span style=”opacity:.75”>Step 2</span> Load the output file below &nbsp;→&nbsp;
-    <span style=”opacity:.75”>Step 3</span> Save as PDF
+  <div style=”display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap”>
+    <div style=”flex:1; min-width:260px”>
+      <h1 style=”margin:0 0 14px”>STR <b>Listing Optimizer</b></h1>
+      <div class=”step-flow”>
+        <div class=”step”>
+          <div class=”step-num”>1</div>
+          <div class=”step-text”><b>Run on your PC</b>Double-click <code style=”font-size:10.5px;background:#2a2a4a;padding:1px 4px;border-radius:3px”>run_report.cmd</code></div>
+        </div>
+        <div class=”step-arrow”>→</div>
+        <div class=”step”>
+          <div class=”step-num”>2</div>
+          <div class=”step-text”><b>Load the output file</b><code style=”font-size:10.5px;background:#2a2a4a;padding:1px 4px;border-radius:3px”>output\listing_data.json</code></div>
+        </div>
+        <div class=”step-arrow”>→</div>
+        <div class=”step”>
+          <div class=”step-num”>3</div>
+          <div class=”step-text”><b>Save as PDF</b>Click ⬇ PDF → print dialog → Save as PDF</div>
+        </div>
+      </div>
+    </div>
+    <div style=”display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; padding-top:2px”>
+      <button class=”b-light” style=”font-size:14px;padding:11px 18px;font-weight:800” onclick=”document.getElementById('fileInput').click()”>📂 Load analysis file</button>
+      <input id=”fileInput” type=”file” accept=”.json,application/json” style=”display:none” onchange=”loadFile(event)”>
+      <button class=”b-primary” onclick=”renderFromInputs()”>▶ Render</button>
+      <button class=”b-ghost” onclick=”window.print()”>⬇ PDF</button>
+      <button class=”b-ghost” onclick=”loadSample()”>Sample</button>
+    </div>
   </div>
-
-  <div class=”btns” style=”margin-top:0;margin-bottom:12px”>
-    <button class=”b-light” style=”font-size:14px;padding:12px 20px” onclick=”document.getElementById('fileInput').click()”>📂 Load analysis file &nbsp;<span style=”opacity:.65;font-size:12px;font-weight:400”>output\listing_data.json</span></button>
-    <input id=”fileInput” type=”file” accept=”.json,application/json” style=”display:none” onchange=”loadFile(event)”>
-    <button class=”b-primary” onclick=”renderFromInputs()”>▶ Render report</button>
-    <button class=”b-ghost” onclick=”window.print()”>⬇ Save as PDF</button>
-    <button class=”b-ghost” onclick=”loadSample()”>Load sample</button>
-  </div>
-
-  <details>
-    <summary>Advanced — set listing URL / paste JSON manually</summary>
+  <div class=”loaded-ok” id=”loadedOk”></div>
+  <details style=”margin-top:10px”>
+    <summary>Advanced — paste JSON or set URL manually</summary>
     <div style=”margin-top:12px”>
       <div class=”row”>
         <div class=”field grow”>
-          <label>Listing URL <span style=”opacity:.6;font-size:10px;font-weight:400”>(reference only — stored in report metadata)</span></label>
-          <input id=”urlInput” type=”url” placeholder=”https://www.airbnb.com/rooms/12345678  or  Booking.com property URL”>
+          <label>Listing URL <span style=”opacity:.6;font-size:10px;font-weight:400”>(reference only — stored in metadata)</span></label>
+          <input id=”urlInput” type=”url” placeholder=”https://www.airbnb.com/rooms/12345678”>
         </div>
         <div class=”field”>
           <label>Platform</label>
-          <select id=”platformInput”>
-            <option>Airbnb</option>
-            <option>Booking.com</option>
-          </select>
+          <select id=”platformInput”><option>Airbnb</option><option>Booking.com</option></select>
         </div>
       </div>
       <div class=”field” style=”margin-top:12px”>
-        <label>Paste listing_data.json</label>
-        <textarea id=”jsonInput” placeholder=”Paste the JSON produced by run_report.cmd here…”></textarea>
+        <label>listing_data.json</label>
+        <textarea id=”jsonInput” placeholder=”Paste JSON here…”></textarea>
       </div>
     </div>
   </details>
-
   <div class=”err” id=”errBox”></div>
 </div>
 
 <div class="stage">
   <div class="doc" id="doc">
     <div class="empty" id="emptyState">
-      No report yet. Paste <b>listing_data.json</b> above and click <b>Render report</b> — or click <b>Load sample</b> to preview the layout.
+      <span class="empty-icon">📊</span>
+      <h2>Ready for your report</h2>
+      <p>Click <b>Load analysis file</b> and select the <code>listing_data.json</code><br>from your <code>output\</code> folder after running <code>run_report.cmd</code>.</p>
+      <button class="b-primary e-btn" onclick="document.getElementById('fileInput').click()">📂 Load analysis file</button>
+      <div class="e-hint">No file yet? <a href="#" onclick="loadSample();return false">Load sample report</a> to preview the layout.</div>
     </div>
   </div>
 </div>
@@ -283,19 +328,6 @@ function business(bm, rb){
   return sec('Business Metrics Dashboard', cards+scores);
 }
 
-function audit(rows){
-  if(!rows||!rows.length) return '';
-  const body=rows.map(r=>`
-    <div class="audit-item">
-      <div><span class="pill ${esc((r.grade||'C').trim())}">${esc((r.grade||'?').trim())}</span></div>
-      <div>
-        <div class="cat">${esc(r.name)} ${has(r.impact)?`<span class="impact">${esc(r.impact)}</span>`:''}</div>
-        <div class="small muted">${esc(r.current_state||'')}</div>
-        <ul>${(r.issues||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
-      </div>
-    </div>`).join('');
-  return sec('Full Listing Audit (A–D)', body);
-}
 
 function dollarLeak(rows){
   if(!rows||!rows.length) return '';
@@ -390,23 +422,69 @@ function sec(kicker, inner){
   return `<section class="sec"><h2 class="kicker">${kicker}</h2>${inner}</section>`;
 }
 
+function deptHeader(name, icon, sub){
+  return `<div class="dept-header"><div class="dept-icon">${icon}</div>
+    <div><div class="dept-name">${name}</div><div class="dept-sub">${sub}</div></div></div>`;
+}
+
+// renders audit cards for a subset of categories (no section wrapper)
+function auditCards(rows){
+  return (rows||[]).map(r=>`
+    <div class="audit-item">
+      <div><span class="pill ${esc((r.grade||'C').trim())}">${esc((r.grade||'?').trim())}</span></div>
+      <div>
+        <div class="cat">${esc(r.name)} ${has(r.impact)?`<span class="impact">${esc(r.impact)}</span>`:''}</div>
+        <div class="small muted">${esc(r.current_state||'')}</div>
+        <ul>${(r.issues||[]).map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+      </div>
+    </div>`).join('');
+}
+
 /* ---------- assemble ---------- */
 function renderReport(d){
   const m=d.meta||{};
+
+  // index audit rows by category name for department routing
+  const auditMap={};
+  (d.audit||[]).forEach(r=>{ auditMap[(r.name||'').toUpperCase()]=r; });
+  const pick=(...names)=>names.map(n=>auditMap[n]).filter(Boolean);
+  const auditSec=(...names)=>{
+    const rows=pick(...names); if(!rows.length) return '';
+    const label=rows.length===1?`${rows[0].name} Audit`:`Audit — ${rows.map(r=>r.name).join(' & ')}`;
+    return sec(label, auditCards(rows));
+  };
+
   const html =
     cover(m, d.review_breakdown) +
     `<div style="height:6px"></div>` +
     ownerSummary(d.owner_summary) +
     business(d.business_metrics, d.review_breakdown) +
-    audit(d.audit) +
+
+    deptHeader('Revenue Management','💰','Pricing strategy, dollar-leak ranking, and effort vs. impact') +
+    auditSec('PRICING') +
     dollarLeak(d.dollar_leak) +
     matrix(d.effort_impact_matrix) +
     pricing(d.pricing) +
+
+    deptHeader('Content & Marketing','✍️','Title and description — findings and ready-to-paste rewrites') +
+    auditSec('TITLE','DESCRIPTION') +
     rewrites(d.rewrites) +
+
+    deptHeader('Visual Marketing','📷','Photo audit and prioritised shot list') +
+    auditSec('PHOTOS') +
     photoPlan(d.photo_plan) +
+
+    deptHeader('Operations','🔧','Amenities, compliance, and safety gaps') +
+    auditSec('AMENITIES') +
+
+    deptHeader('Guest Experience','⭐','Review performance and response strategy') +
+    auditSec('REVIEWS') +
     reviewStrategy(d.review_strategy) +
+
+    deptHeader('Action Plan','📋','Full priority checklist sorted by annual revenue impact') +
     checklist(d.checklist) +
     totalUpside(d.total_upside) +
+
     `<div class="footer">Generated by STR Listing Optimizer · ${esc(m.report_date||'')} · Source: ${esc(m.url||'—')}<br>
        Estimates are conservative and based on stated market data at time of analysis; actuals vary with execution, season, and demand.</div>`;
   $('doc').innerHTML = html;
@@ -415,10 +493,9 @@ function renderReport(d){
 
 function readData(){
   const raw=$('jsonInput').value.trim();
-  if(!raw) throw new Error('Paste listing_data.json into the box first (or click “Load sample”).');
+  if(!raw) throw new Error('Click “Load analysis file” to load listing_data.json — or click “Sample” to preview.');
   let d;
   try{ d=JSON.parse(raw); }catch(e){ throw new Error('JSON parse error: '+e.message); }
-  // overlay URL/platform from the inputs if provided
   d.meta = d.meta||{};
   if($('urlInput').value.trim()) d.meta.url = $('urlInput').value.trim();
   if($('platformInput').value) d.meta.platform = d.meta.platform || $('platformInput').value;
@@ -434,7 +511,13 @@ function renderFromInputs(){
 function loadFile(ev){
   const f=ev.target.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=()=>{ $('jsonInput').value=r.result; renderFromInputs(); };
+  r.onload=()=>{
+    $('jsonInput').value=r.result;
+    const ok=$('loadedOk');
+    ok.textContent=`✓ Loaded: ${f.name}`;
+    ok.style.display='block';
+    renderFromInputs();
+  };
   r.readAsText(f);
 }
 
