@@ -201,28 +201,15 @@
 <body>
 
 <div class=”panel” id=”panel”>
-  <div style=”display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap”>
-    <div style=”flex:1; min-width:260px”>
-      <h1 style=”margin:0 0 14px”>STR <b>Listing Optimizer</b></h1>
-      <div class=”step-flow”>
-        <div class=”step”>
-          <div class=”step-num”>1</div>
-          <div class=”step-text”><b>Run on your PC</b>Double-click <code style=”font-size:10.5px;background:#2a2a4a;padding:1px 4px;border-radius:3px”>run_report.cmd</code></div>
-        </div>
-        <div class=”step-arrow”>→</div>
-        <div class=”step”>
-          <div class=”step-num”>2</div>
-          <div class=”step-text”><b>Load the output file</b><code style=”font-size:10.5px;background:#2a2a4a;padding:1px 4px;border-radius:3px”>output\listing_data.json</code></div>
-        </div>
-        <div class=”step-arrow”>→</div>
-        <div class=”step”>
-          <div class=”step-num”>3</div>
-          <div class=”step-text”><b>Save as PDF</b>Click ⬇ PDF → print dialog → Save as PDF</div>
-        </div>
+  <div style=”display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap”>
+    <div>
+      <h1 style=”margin:0 0 3px”>STR <b>Listing Optimizer</b> <span style=”font-size:12px;font-weight:400;color:#7a7fa0;letter-spacing:.5px;margin-left:6px”>Report Viewer</span></h1>
+      <div style=”font-size:12px; color:#9097bb; margin-top:2px”>
+        AI analysis runs on your PC via <code style=”background:#2a2a4a;padding:1px 5px;border-radius:3px;font-size:11px”>run_report.cmd</code> — this page renders the output file.
       </div>
     </div>
-    <div style=”display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; padding-top:2px”>
-      <button class=”b-light” style=”font-size:14px;padding:11px 18px;font-weight:800” onclick=”document.getElementById('fileInput').click()”>📂 Load analysis file</button>
+    <div style=”display:flex; gap:8px; align-items:center; flex-wrap:wrap”>
+      <button class=”b-light” style=”font-size:13px;padding:10px 16px;font-weight:800” onclick=”document.getElementById('fileInput').click()”>📂 Load output file</button>
       <input id=”fileInput” type=”file” accept=”.json,application/json” style=”display:none” onchange=”loadFile(event)”>
       <button class=”b-primary” onclick=”renderFromInputs()”>▶ Render</button>
       <button class=”b-ghost” onclick=”window.print()”>⬇ PDF</button>
@@ -255,11 +242,34 @@
 <div class="stage">
   <div class="doc" id="doc">
     <div class="empty" id="emptyState">
-      <span class="empty-icon">📊</span>
-      <h2>Ready for your report</h2>
-      <p>Click <b>Load analysis file</b> and select the <code>listing_data.json</code><br>from your <code>output\</code> folder after running <code>run_report.cmd</code>.</p>
-      <button class="b-primary e-btn" onclick="document.getElementById('fileInput').click()">📂 Load analysis file</button>
-      <div class="e-hint">No file yet? <a href="#" onclick="loadSample();return false">Load sample report</a> to preview the layout.</div>
+      <div style="display:flex; gap:24px; justify-content:center; flex-wrap:wrap; text-align:left; max-width:700px; margin:0 auto">
+
+        <div style="flex:1; min-width:260px; background:#f6f7fb; border:1px solid #e6e8ef; border-radius:12px; padding:24px">
+          <div style="font-size:28px; margin-bottom:10px">🖥️</div>
+          <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#E94560; margin-bottom:6px">Step 1 — Run on your PC</div>
+          <div style="font-size:14px; font-weight:700; color:#1A1A2E; margin-bottom:8px">Generate the analysis</div>
+          <div style="font-size:13px; color:#6b7280; line-height:1.6">
+            Double-click <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:12px">run_report.cmd</code> in your<br>
+            <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:12px">Listing report\</code> folder.<br><br>
+            A dialog will appear — paste the Airbnb URL and click <b>Run Analysis</b>.<br><br>
+            The AI scrapes the listing, researches the market, and writes your full audit. Takes 2–4 minutes.
+          </div>
+        </div>
+
+        <div style="flex:1; min-width:260px; background:#f6f7fb; border:2px solid #E94560; border-radius:12px; padding:24px">
+          <div style="font-size:28px; margin-bottom:10px">📂</div>
+          <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#E94560; margin-bottom:6px">Step 2 — Load the output file</div>
+          <div style="font-size:14px; font-weight:700; color:#1A1A2E; margin-bottom:8px">Render &amp; save the PDF</div>
+          <div style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:16px">
+            After Step 1 finishes, click the button below and open<br>
+            <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:12px">output\listing_data.json</code><br><br>
+            The full report renders instantly. Click <b>⬇ PDF</b> to save.
+          </div>
+          <button class="b-primary" style="font-size:14px;padding:12px 20px;width:100%" onclick="document.getElementById('fileInput').click()">📂 Load output file</button>
+        </div>
+
+      </div>
+      <div class="e-hint" style="margin-top:20px">No file yet? <a href="#" onclick="loadSample();return false">Load sample report</a> to preview the layout.</div>
     </div>
   </div>
 </div>
