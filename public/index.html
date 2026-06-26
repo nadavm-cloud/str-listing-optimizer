@@ -242,34 +242,52 @@
 <div class="stage">
   <div class="doc" id="doc">
     <div class="empty" id="emptyState">
-      <div style="display:flex; gap:24px; justify-content:center; flex-wrap:wrap; text-align:left; max-width:700px; margin:0 auto">
+      <div style="font-size:13px;font-weight:700;color:#9097bb;letter-spacing:.5px;text-transform:uppercase;margin-bottom:18px">How would you like to generate the report?</div>
+      <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap; text-align:left; max-width:820px; margin:0 auto">
 
-        <div style="flex:1; min-width:260px; background:#f6f7fb; border:1px solid #e6e8ef; border-radius:12px; padding:24px">
-          <div style="font-size:28px; margin-bottom:10px">🖥️</div>
-          <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#E94560; margin-bottom:6px">Step 1 — Run on your PC</div>
-          <div style="font-size:14px; font-weight:700; color:#1A1A2E; margin-bottom:8px">Generate the analysis</div>
-          <div style="font-size:13px; color:#6b7280; line-height:1.6">
-            Double-click <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:12px">run_report.cmd</code> in your<br>
-            <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:12px">Listing report\</code> folder.<br><br>
-            A dialog will appear — paste the Airbnb URL and click <b>Run Analysis</b>.<br><br>
-            The AI scrapes the listing, researches the market, and writes your full audit. Takes 2–4 minutes.
+        <!-- Option A: CMD -->
+        <div style="flex:1; min-width:240px; background:#f6f7fb; border:1px solid #e6e8ef; border-radius:12px; padding:22px">
+          <div style="font-size:26px; margin-bottom:8px">🖥️</div>
+          <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#E94560; margin-bottom:5px">Option A — Windows CMD</div>
+          <div style="font-size:14px; font-weight:700; color:#1A1A2E; margin-bottom:8px">Fully automatic local run</div>
+          <div style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:14px">
+            Double-click <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:11px">run_report.cmd</code>,
+            paste the URL in the dialog, wait 2–4 min.<br><br>
+            The PDF opens automatically — no manual steps.
           </div>
+          <button class="b-primary" style="font-size:13px;padding:10px 16px;width:100%" onclick="document.getElementById('fileInput').click()">📂 Load output file when done</button>
         </div>
 
-        <div style="flex:1; min-width:260px; background:#f6f7fb; border:2px solid #E94560; border-radius:12px; padding:24px">
-          <div style="font-size:28px; margin-bottom:10px">📂</div>
-          <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#E94560; margin-bottom:6px">Step 2 — Load the output file</div>
-          <div style="font-size:14px; font-weight:700; color:#1A1A2E; margin-bottom:8px">Render &amp; save the PDF</div>
-          <div style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:16px">
-            After Step 1 finishes, click the button below and open<br>
-            <code style="background:#e6e8ef;padding:2px 6px;border-radius:4px;font-size:12px">output\listing_data.json</code><br><br>
-            The full report renders instantly. Click <b>⬇ PDF</b> to save.
+        <!-- Option B: Claude.ai Project -->
+        <div style="flex:1; min-width:240px; background:#f6f7fb; border:2px solid #E94560; border-radius:12px; padding:22px">
+          <div style="font-size:26px; margin-bottom:8px">💬</div>
+          <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#E94560; margin-bottom:5px">Option B — Claude.ai Chat</div>
+          <div style="font-size:14px; font-weight:700; color:#1A1A2E; margin-bottom:8px">Works for the whole team</div>
+          <div style="font-size:13px; color:#6b7280; line-height:1.6; margin-bottom:14px">
+            Open the <b>STR Listing Optimizer</b> project in Claude.ai,
+            paste the listing URL in chat, wait for the JSON response,
+            then paste it below.
           </div>
-          <button class="b-primary" style="font-size:14px;padding:12px 20px;width:100%" onclick="document.getElementById('fileInput').click()">📂 Load output file</button>
+          <button class="b-ghost" style="font-size:13px;padding:10px 16px;width:100%;background:#1A1A2E;border:0;color:#fff;border-radius:8px;font-weight:700;cursor:pointer" onclick="showPasteBox()">📋 Paste JSON from Claude.ai</button>
         </div>
 
       </div>
-      <div class="e-hint" style="margin-top:20px">No file yet? <a href="#" onclick="loadSample();return false">Load sample report</a> to preview the layout.</div>
+      <div class="e-hint" style="margin-top:18px">Just exploring? <a href="#" onclick="loadSample();return false">Load sample report</a> to preview the layout.</div>
+    </div>
+
+    <!-- inline paste box (shown when Option B is clicked) -->
+    <div id="pasteBox" style="display:none; padding:0 18mm 40px">
+      <div style="background:#fff; border:2px solid #E94560; border-radius:12px; padding:20px; max-width:700px; margin:0 auto">
+        <div style="font-size:13px; font-weight:700; color:#1A1A2E; margin-bottom:10px">
+          Paste the JSON from Claude.ai's response:
+        </div>
+        <textarea id="pasteInput" style="width:100%;min-height:140px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;border:1px solid #e6e8ef;border-radius:8px;padding:10px;color:#1f2430"
+          placeholder="Copy the full JSON code block from Claude.ai and paste it here…"></textarea>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="b-primary" style="flex:1" onclick="renderFromPaste()">▶ Render report</button>
+          <button class="b-ghost" onclick="hidePasteBox()" style="background:#1A1A2E;border:0;color:#fff">✕ Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -516,6 +534,27 @@ function renderFromInputs(){
   $('errBox').textContent='';
   try{ renderReport(readData()); }
   catch(e){ $('errBox').textContent=e.message; }
+}
+
+/* ---------- paste-box helpers (Option B — Claude.ai) ---------- */
+function showPasteBox(){
+  $('emptyState').style.display='none';
+  $('pasteBox').style.display='block';
+  $('pasteInput').focus();
+}
+function hidePasteBox(){
+  $('pasteBox').style.display='none';
+  $('emptyState').style.display='block';
+  $('pasteInput').value='';
+}
+function renderFromPaste(){
+  const raw=$('pasteInput').value.trim();
+  if(!raw){ $('errBox').textContent='Paste the JSON from Claude.ai first.'; return; }
+  // strip markdown code fences if Claude wrapped the JSON in ```json ... ```
+  const stripped=raw.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'').trim();
+  $('jsonInput').value=stripped;
+  hidePasteBox();
+  renderFromInputs();
 }
 
 function loadFile(ev){
